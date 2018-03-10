@@ -94,7 +94,7 @@ class ImageViewer(QMainWindow):
                 "print an image.</p>")
 
     def createActions(self):
-        self.openAct = QAction("&Open...", self, shortcut="Ctrl+O",
+        self.openAct = QAction("&Open Dir", self, shortcut="Ctrl+O",
                 triggered=self.open)
 
         self.printAct = QAction("&Print...", self, shortcut="Ctrl+P",
