@@ -3,11 +3,18 @@ from PyQt5.QtGui import QImage, QPainter, QPalette, QPixmap
 from PyQt5.QtWidgets import (QAction, QApplication, QFileDialog, QLabel,
         QMainWindow, QMenu, QMessageBox, QScrollArea, QSizePolicy)
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
-
+import os
 
 class ImageViewer(QMainWindow):
     def __init__(self):
         super(ImageViewer, self).__init__()
+
+        self.files = []
+        self.sfiles = []
+        self.c = -1
+        self.path = ""
+        self.p = 0
+
 
         self.printer = QPrinter()
         self.scaleFactor = 0.0
@@ -16,7 +23,10 @@ class ImageViewer(QMainWindow):
         self.imageLabel.setBackgroundRole(QPalette.Base)
         self.imageLabel.setSizePolicy(QSizePolicy.Ignored, QSizePolicy.Ignored)
         self.imageLabel.setScaledContents(True)
-
+        
+        self.lb1 = QLabel('学点编程吧，我爱你~！',self)
+        self.statusBar().showMessage('Ready')
+        
         self.scrollArea = QScrollArea()
         self.scrollArea.setBackgroundRole(QPalette.Dark)
         self.scrollArea.setWidget(self.imageLabel)
@@ -29,36 +39,88 @@ class ImageViewer(QMainWindow):
         self.resize(500, 400)
         self.show()
 
-    def open(self):
-        fileName, _ = QFileDialog.getOpenFileName(self, "Open Dir",
-                "H:\新建文件夹")
-        if fileName:
-            image = QImage(fileName)
+    def openimg(self, url):
+
+        if url:
+            image = QImage(url)
             if image.isNull():
                 QMessageBox.information(self, "Image Viewer",
-                        "Cannot load %s." % fileName)
+                        "Cannot load %s." % url)
                 return
 
             self.imageLabel.setPixmap(QPixmap.fromImage(image))
             self.scaleFactor = 1.0
 
-            self.printAct.setEnabled(True)
+            if self.files[self.c] not in self.sfiles:
+                status = '将要删除'
+            else:
+                status = '保存'
+            self.statusBar().showMessage(status)
+
             self.fitToWindowAct.setEnabled(True)
             self.updateActions()
 
             if not self.fitToWindowAct.isChecked():
                 self.imageLabel.adjustSize()
+    def opendir(self):
+        directory = QFileDialog.getExistingDirectory(self, "选取文件夹", "H:\新建文件夹")
+        self.files = []
+        self.sfiles = []
+        if directory:
+            self.path = directory
+            for fname in os.listdir(directory):
+                self.files.append(fname)
+                self.sfiles.append(fname)
+            if self.files:
+                self.c = 0
+                self.openimg(self.path + '\\' + self.files[self.c])
 
-    def print_(self):
-        dialog = QPrintDialog(self.printer, self)
-        if dialog.exec_():
-            painter = QPainter(self.printer)
-            rect = painter.viewport()
-            size = self.imageLabel.pixmap().size()
-            size.scale(rect.size(), Qt.KeepAspectRatio)
-            painter.setViewport(rect.x(), rect.y(), size.width(), size.height())
-            painter.setWindow(self.imageLabel.pixmap().rect())
-            painter.drawPixmap(0, 0, self.imageLabel.pixmap())
+    def keyPressEvent(self, e):
+        
+        if e.key() == Qt.Key_A:
+            self.c -= 1
+            if self.c < 0:
+                self.c =0
+                QMessageBox.information(self, "提示", "这是第一张...")
+            else:
+                self.openimg(self.path + '\\' + self.files[self.c])
+        elif e.key() == Qt.Key_S:
+            if self.files[self.c] in self.sfiles:
+                self.sfiles.remove(self.files[self.c])
+                if (self.c + 1) > self.p:
+                    self.p = self.c + 1
+            else:
+                self.sfiles.append(self.files[self.c])
+            self.openimg(self.path + '\\' + self.files[self.c])
+        elif e.key() == Qt.Key_D:
+            self.c += 1
+            if self.c > (len(self.files) - 1):
+                self.c -=1
+                QMessageBox.information(self, "提示", "这是最后一张...")
+            else:
+                self.openimg(self.path + '\\' + self.files[self.c])
+
+    def deleFile(self):
+        reply = QMessageBox.question(self, '警告',
+            "确定要删除？", QMessageBox.Yes | 
+            QMessageBox.No, QMessageBox.No)
+
+        if reply == QMessageBox.Yes:
+            print ('delete')
+
+            for f in self.files:
+                if f not in self.sfiles:
+                    os.remove(self.path + '\\' + f)
+                    print (f, '  deleted')
+                    #self.files.remove(f)
+            self.c = self.p - (len(self.files)-len(self.sfiles))
+            self.files = self.sfiles
+            self.openimg(self.path + '\\' + self.files[self.c])
+        else:
+            print ('holly')
+
+
+
 
     def zoomIn(self):
         self.scaleImage(1.25)
@@ -96,10 +158,9 @@ class ImageViewer(QMainWindow):
 
     def createActions(self):
         self.openAct = QAction("&Open Dir", self, shortcut="Ctrl+O",
-                triggered=self.open)
-
-        self.printAct = QAction("&Print...", self, shortcut="Ctrl+P",
-                enabled=False, triggered=self.print_)
+                triggered=self.opendir)  
+        self.deleAct = QAction("&Delete File", self, shortcut="Ctrl+D",
+                triggered=self.deleFile)
 
         self.exitAct = QAction("E&xit", self, shortcut="Ctrl+Q",
                 triggered=self.close)
@@ -124,7 +185,7 @@ class ImageViewer(QMainWindow):
     def createMenus(self):
         self.fileMenu = QMenu("&File", self)
         self.fileMenu.addAction(self.openAct)
-        self.fileMenu.addAction(self.printAct)
+        self.fileMenu.addAction(self.deleAct)
         self.fileMenu.addSeparator()
         self.fileMenu.addAction(self.exitAct)
 
@@ -162,11 +223,8 @@ class ImageViewer(QMainWindow):
         scrollBar.setValue(int(factor * scrollBar.value()
                                 + ((factor - 1) * scrollBar.pageStep()/2)))
 
-    def keyPressEvent(self, e):
-        
-        if e.key() == Qt.Key_W:
-            print ('aaa')
-            self.close()
+    
+
 if __name__ == '__main__':
 
     import sys
