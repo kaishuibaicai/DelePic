@@ -1,5 +1,5 @@
 from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QInputDialog, QApplication, QFileDialog
-import sys
+import sys, os
 
 class Example(QWidget):
 
@@ -14,17 +14,17 @@ class Example(QWidget):
 		self.btn.move(20, 20)
 		self.btn.clicked.connect(self.opendir)
 
-		self.le = QLineEdit(self)
-		self.le.move(130, 22)
-
 		self.setGeometry(300, 300, 290, 150)
 		self.setWindowTitle('删图')
 		self.show()
 
 	def opendir(self):
-		directory = QFileDialog.getExistingDirectory(self, "选取文件夹", "C:/")
-
-		print (directory)
+		directory = QFileDialog.getExistingDirectory(self, "选取文件夹", "H:\新建文件夹")
+		files = []
+		for fname in os.listDir(directory):
+			files.append(fname)
+			print (fname)
+		
 
 if __name__ == '__main__':
 	app = QApplication(sys.argv)
