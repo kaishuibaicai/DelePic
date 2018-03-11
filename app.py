@@ -1,12 +1,15 @@
-from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QInputDialog, QApplication, QFileDialog
+from PyQt5.QtWidgets import QWidget, QPushButton, QLineEdit, QInputDialog, QApplication, QFileDialog, QLabel, QHBoxLayout
 import sys, os
+from PyQt5.QtGui import QPixmap
+import time
 
 class Example(QWidget):
 
 	def __init__(self):
 		super().__init__()
-
 		self.initUI()
+		self.files = []
+
 
 	def initUI(self):
 
@@ -20,12 +23,14 @@ class Example(QWidget):
 
 	def opendir(self):
 		directory = QFileDialog.getExistingDirectory(self, "选取文件夹", "H:\新建文件夹")
-		files = []
-		for fname in os.listDir(directory):
-			files.append(fname)
-			print (fname)
-		
-
+		self.files = []
+		if directory:
+			for fname in os.listdir(directory):
+				self.files.append(fname)
+				
+			print (self.files)
+				
+			
 if __name__ == '__main__':
 	app = QApplication(sys.argv)
 	ex = Example()

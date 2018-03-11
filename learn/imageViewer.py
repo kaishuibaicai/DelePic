@@ -27,10 +27,11 @@ class ImageViewer(QMainWindow):
 
         self.setWindowTitle("Image Viewer")
         self.resize(500, 400)
+        self.show()
 
     def open(self):
         fileName, _ = QFileDialog.getOpenFileName(self, "Open Dir",
-                QDir.currentPath())
+                "H:\新建文件夹")
         if fileName:
             image = QImage(fileName)
             if image.isNull():
@@ -161,12 +162,15 @@ class ImageViewer(QMainWindow):
         scrollBar.setValue(int(factor * scrollBar.value()
                                 + ((factor - 1) * scrollBar.pageStep()/2)))
 
-
+    def keyPressEvent(self, e):
+        
+        if e.key() == Qt.Key_W:
+            print ('aaa')
+            self.close()
 if __name__ == '__main__':
 
     import sys
 
     app = QApplication(sys.argv)
     imageViewer = ImageViewer()
-    imageViewer.show()
     sys.exit(app.exec_())
