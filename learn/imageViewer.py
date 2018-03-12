@@ -3,7 +3,7 @@ from PyQt5.QtGui import QImage, QPainter, QPalette, QPixmap
 from PyQt5.QtWidgets import (QAction, QApplication, QFileDialog, QLabel,
         QMainWindow, QMenu, QMessageBox, QScrollArea, QSizePolicy)
 from PyQt5.QtPrintSupport import QPrintDialog, QPrinter
-import os
+import os, shutil
 
 class ImageViewer(QMainWindow):
     def __init__(self):
@@ -64,16 +64,24 @@ class ImageViewer(QMainWindow):
                 self.imageLabel.adjustSize()
     def opendir(self):
         directory = QFileDialog.getExistingDirectory(self, "选取文件夹", "H:\新建文件夹")
-        self.files = []
-        self.sfiles = []
+        self.opdir(directory)
+
+    def opdir(self, directory):
         if directory:
+            self.files = []
+            self.sfiles = []
+            self.p = 0
             self.path = directory
             for fname in os.listdir(directory):
-                self.files.append(fname)
-                self.sfiles.append(fname)
+                if fname != 'safeFiles':
+                    self.files.append(fname)
+                    self.sfiles.append(fname)
             if self.files:
                 self.c = 0
                 self.openimg(self.path + '\\' + self.files[self.c])
+            if not os.path.exists(directory + '\\' + 'safeFiles'):
+                os.mkdir(directory + '\\' + 'safeFiles')
+
 
     def keyPressEvent(self, e):
         
@@ -87,7 +95,7 @@ class ImageViewer(QMainWindow):
         elif e.key() == Qt.Key_S:
             if self.files[self.c] in self.sfiles:
                 self.sfiles.remove(self.files[self.c])
-                if (self.c + 1) > self.p:
+                if self.c  > self.p:
                     self.p = self.c + 1
             else:
                 self.sfiles.append(self.files[self.c])
@@ -108,14 +116,18 @@ class ImageViewer(QMainWindow):
         if reply == QMessageBox.Yes:
             print ('delete')
 
-            for f in self.files:
+            for f in self.files[0:self.p]:
                 if f not in self.sfiles:
                     os.remove(self.path + '\\' + f)
                     print (f, '  deleted')
                     #self.files.remove(f)
-            self.c = self.p - (len(self.files)-len(self.sfiles))
-            self.files = self.sfiles
-            self.openimg(self.path + '\\' + self.files[self.c])
+                else:
+                    shutil.move(self.path + '\\' + f, self.path + '\\' + 'safeFiles\\' + f)
+            #self.c = self.p - (len(self.files)-len(self.sfiles))
+            #self.files = self.sfiles
+            #print (self.c)
+            #self.openimg(self.path + '\\' + self.files[self.c])
+            self.opdir(self.path)
         else:
             print ('holly')
 
